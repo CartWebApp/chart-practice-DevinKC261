@@ -11,6 +11,7 @@ const dataPreview = document.getElementById("dataPreview");
 const canvas = document.getElementById("chartCanvas");
 const publisherSelect = document.getElementById("publisherSelect");
 const yearSelect = document.getElementById("yearSelect");
+const regionSelect = document.getElementById("regionSelect");
 
 let currentChart = null;
 
@@ -19,14 +20,19 @@ const genre = [...new Set(chartData.map(r => r.genre))];
 const platform = [...new Set(chartData.map(r => r.platform))];
 const publisher = [...new Set(chartData.map(r => r.publisher))];
 const year = [...new Set(chartData.map(r => r.year))];
+const region = [...new Set(chartData.map(r => r.region))];
 
 genre.forEach(m => genreSelect.add(new Option(m, m)));
 platform.forEach(h => platformSelect.add(new Option(h, h)));
 publisher.forEach(p => publisherSelect.add(new Option(p, p)));
 year.forEach(p => yearSelect.add(new Option(p, p)));
+region.forEach(p => regionSelect.add(new Option(p, p)));
 
 genreSelect.value = genre[0];
 platformSelect.value = platform[0];
+publisherSelect.value = genre[0];
+yearSelect.value = platform[0];
+regionSelect.value = platform[0];
 
 // Preview first 6 rows
 dataPreview.textContent = JSON.stringify(chartData.slice(0, 6), null, 2);
@@ -37,31 +43,32 @@ renderBtn.addEventListener("click", () => {
   const genre = genreSelect.value;
   const platform = platformSelect.value;
   const metric = metricSelect.value;
-  const publisher = publisherSelectSelect.value;
-  const year = yearSelectSelect.value;
+  const publisher = publisherSelect.value;
+  const year = yearSelect.value;
+  const region = regionSelect.value;
 
   // Destroy old chart if it exists (common Chart.js gotcha)
   if (currentChart) currentChart.destroy();
 
   // Build chart config based on type
-  const config = buildConfig(chartType, { genre, platform, metric, publisher, year });
+  const config = buildConfig(chartType, { genre, platform, metric, publisher, year, region });
 
   currentChart = new Chart(canvas, config);
 });
 
 // --- Students: you’ll edit / extend these functions ---
-function buildConfig(type, { genre, platform, metric, publisher, year }) {
-  if (type === "bar") return barByNeighborhood(genre, metric);
-  if (type === "line") return lineOverTime(publisher, ["priceUSD", "revenueUSD"]);
+function buildConfig(type, { genre, platform, year, publisher, region, metric}) {
+  if (type === "bar") return barByNeighborhood(platform, metric);
+  if (type === "line") return lineOverTime(publisher, ["year", "revenueUSD"]);
   if (type === "scatter") return scatterTripsVsTemp(platform);
   if (type === "doughnut") return doughnutMemberVsCasual(genre, platform);
   if (type === "radar") return radarCompareNeighborhoods(genre);
-  return barByNeighborhood(genre, metric);
+  return barByNeighborhood(platform, metric);
 }
 
 // Task A: BAR — compare neighborhoods for a given genre
-function barByNeighborhood(genre, metric) {
-  const rows = chartData.filter(r => r.genre === genre);
+function barByNeighborhood(platform, metric) {
+  const rows = chartData.filter(r => r.platform === platform);
 
   const labels = rows.map(r => r.platform);
   const values = rows.map(r => r[metric]);
@@ -71,7 +78,7 @@ function barByNeighborhood(genre, metric) {
     data: {
       labels,
       datasets: [{
-        label: `${metric} in ${genre}`,
+        label: `${metric} in ${platform}`,
         data: values
       }]
     },
@@ -89,10 +96,10 @@ function barByNeighborhood(genre, metric) {
 }
 
 // Task B: LINE — trend over time for one neighborhood (2 datasets)
-function lineOverTime(platform, metrics) {
-  const rows = chartData.filter(r => r.platform === platform);
+function lineOverTime(publisher, metrics) {
+  const rows = chartData.filter(r => r.publisher === publisher);
 
-  const labels = rows.map(r => r.genre);
+  const labels = rows.map(r => r.metric);
 
   const datasets = metrics.map(m => ({
     label: m,
@@ -108,8 +115,8 @@ function lineOverTime(platform, metrics) {
         title: { display: true, text: `Trends over time: ${platform}` }
       },
       scales: {
-        y: { title: { display: true, text: "Value" } },
-        x: { title: { display: true, text: "genre" } }
+        y: { title: { display: true, text: "publisher" } },
+        x: { title: { display: true, text: "revenueUSD" } }
       }
     }
   };
